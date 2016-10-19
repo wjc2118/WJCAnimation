@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F107EDEB1DB7A36F00116DAC /* UIImage+WJC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F107EDEA1DB7A36F00116DAC /* UIImage+WJC.swift */; };
+		F107EDED1DB7A38600116DAC /* UIColor+WJC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F107EDEC1DB7A38600116DAC /* UIColor+WJC.swift */; };
 		F15B8ACD1DB6461F002177FE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15B8ACC1DB6461F002177FE /* AppDelegate.swift */; };
 		F15B8ACF1DB6461F002177FE /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15B8ACE1DB6461F002177FE /* ViewController.swift */; };
 		F15B8AD41DB6461F002177FE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F15B8AD31DB6461F002177FE /* Assets.xcassets */; };
@@ -15,6 +17,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		F107EDEA1DB7A36F00116DAC /* UIImage+WJC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIImage+WJC.swift"; sourceTree = "<group>"; };
+		F107EDEC1DB7A38600116DAC /* UIColor+WJC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIColor+WJC.swift"; sourceTree = "<group>"; };
 		F15B8AC91DB6461F002177FE /* Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F15B8ACC1DB6461F002177FE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F15B8ACE1DB6461F002177FE /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -56,6 +60,8 @@
 			children = (
 				F15B8ACC1DB6461F002177FE /* AppDelegate.swift */,
 				F15B8ACE1DB6461F002177FE /* ViewController.swift */,
+				F107EDEA1DB7A36F00116DAC /* UIImage+WJC.swift */,
+				F107EDEC1DB7A38600116DAC /* UIColor+WJC.swift */,
 				F15B8ADE1DB64684002177FE /* WJCAnimation */,
 				F15B8AD31DB6461F002177FE /* Assets.xcassets */,
 				F15B8AD51DB6461F002177FE /* LaunchScreen.storyboard */,
@@ -143,9 +149,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F107EDEB1DB7A36F00116DAC /* UIImage+WJC.swift in Sources */,
 				F15B8ACF1DB6461F002177FE /* ViewController.swift in Sources */,
 				F15B8AE01DB64684002177FE /* WJCAnimation.swift in Sources */,
 				F15B8ACD1DB6461F002177FE /* AppDelegate.swift in Sources */,
+				F107EDED1DB7A38600116DAC /* UIColor+WJC.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +309,7 @@
 				F15B8ADD1DB6461F002177FE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

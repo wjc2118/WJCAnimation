@@ -22,22 +22,38 @@ extension Array where Element: UIView {
     }
 }
 
-public enum CircleMode {
-    case sameTime
-    case inTurn
-    case delay(_: TimeInterval)
-}
-
-public enum MoveMode {
-    case horizontal
-    case vertical
-}
-
 extension WJCGroupAnimation {
     
     // MARK: ------------circle------------
     
-    public func circleOpen(arcCenter: CGPoint, radius: CGFloat, startAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
+    public enum CircleState {
+        case open(startAngle: CGFloat)
+        case close(endAngle: CGFloat, completion:((Int, UIView)->())?)
+    }
+    
+    public enum CircleMode {
+        case sameTime
+        case inTurn
+    }
+    
+    public func circle(arcCenter: CGPoint, radius: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, delay: TimeInterval, opacity: Bool, mode: CircleMode, state: CircleState) {
+        switch state {
+        case let .open(startAngle):
+            if opacity {
+                circleOpenOpacity(arcCenter: arcCenter, radius: radius, startAngle: startAngle, maxDegree: maxDegree, marginDegree: marginDegree, clockwise: clockwise, duration: duration, delay: delay, mode: mode)
+            } else {
+                circleOpen(arcCenter: arcCenter, radius: radius, startAngle: startAngle, maxDegree: maxDegree, marginDegree: marginDegree, clockwise: clockwise, duration: duration, delay: delay, mode: mode)
+            }
+        case let .close(endAngle, completion):
+            if opacity {
+                circleCloseOpacity(arcCenter: arcCenter, radius: radius, endAngle: endAngle, maxDegree: maxDegree, marginDegree: marginDegree, clockwise: clockwise, duration: duration, delay: delay, mode: mode, completion: completion)
+            } else {
+                circleClose(arcCenter: arcCenter, radius: radius, endAngle: endAngle, maxDegree: maxDegree, marginDegree: marginDegree, clockwise: clockwise, duration: duration, delay: delay, mode: mode, completion: completion)
+            }
+        }
+    }
+    
+    private func circleOpen(arcCenter: CGPoint, radius: CGFloat, startAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, delay: TimeInterval, mode: CircleMode) {
         let anim = CAKeyframeAnimation()
         anim.calculationMode = kCAAnimationCubicPaced
         anim.keyPath = "position"
@@ -45,8 +61,6 @@ extension WJCGroupAnimation {
         let maxAngle = maxDegree / 180.0 * CGFloat.pi
         let marginAngle = marginDegree / 180.0 * CGFloat.pi
         let eachAngle = (maxAngle - 2 * marginAngle) / CGFloat(views.count - 1)
-        
-        // 以下替换注释
         
         for (idx, view) in views.enumerated() {
             
@@ -59,114 +73,24 @@ extension WJCGroupAnimation {
             switch mode {
             case .sameTime:
                 anim.duration = duration
-                view.layer.position = path.currentPoint
-                if view.layer.opacity < 0.1 {
-                    view.layer.opacity = 1.0
-                }
             case .inTurn:
                 let maxMoveAngle = maxAngle - marginAngle
                 anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / maxMoveAngle) * duration
+            }
+            
+            anim.beginTime = CACurrentMediaTime() + delay * Double(idx)
+            view.layer.add(anim, forKey: "circle")
+            
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay * Double(idx), execute: {
                 view.layer.position = path.currentPoint
                 if view.layer.opacity < 0.1 {
                     view.layer.opacity = 1.0
                 }
-            case let .delay(second):
-                let maxMoveAngle = maxAngle - marginAngle
-                anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / maxMoveAngle) * duration
-                let delay = second * Double(idx)
-                anim.beginTime = CACurrentMediaTime() + delay
-                
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay, execute: {
-                    view.layer.position = path.currentPoint
-                    if view.layer.opacity < 0.1 {
-                        view.layer.opacity = 1.0
-                    }
-                })
-            }
-            
-            view.layer.add(anim, forKey: "circle")
+            })
         }
-        
-//        func sameTime() {
-//            
-//            for (idx, view) in views.enumerated() {
-//                
-//                let endAngle: CGFloat = marginAngle + CGFloat(idx) * eachAngle + startAngle
-//                
-//                let path = CGMutablePath()
-//                path.addArc(center: arcCenter, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: !clockwise)
-//                anim.path = path
-//                
-//                anim.duration = duration
-//                view.layer.position = path.currentPoint
-//                if view.layer.opacity < 0.1 {
-//                    view.layer.opacity = 1.0
-//                }
-//
-//                view.layer.add(anim, forKey: "circle")
-//            }
-//        }
-//
-//        func inTurn() {
-//            
-//            for (idx, view) in views.enumerated() {
-//                
-//                let endAngle: CGFloat = marginAngle + CGFloat(idx) * eachAngle + startAngle
-//                
-//                let path = CGMutablePath()
-//                path.addArc(center: arcCenter, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: !clockwise)
-//                anim.path = path
-        //
-//                let totalMoveAngle = maxAngle - marginAngle
-//                anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / totalMoveAngle) * duration
-//                view.layer.position = path.currentPoint
-//                if view.layer.opacity < 0.1 {
-//                    view.layer.opacity = 1.0
-//                }
-//
-//                view.layer.add(anim, forKey: "circle")
-//            }
-//        }
-//        
-//        func delay(_ second: TimeInterval) {
-//            
-//            for (idx, view) in views.enumerated() {
-//                
-//                let endAngle: CGFloat = marginAngle + CGFloat(idx) * eachAngle + startAngle
-//                
-//                let path = CGMutablePath()
-//                path.addArc(center: arcCenter, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: !clockwise)
-//                anim.path = path
-//
-//                let totalMoveAngle = maxAngle - marginAngle
-//                anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / totalMoveAngle) * duration
-//
-//                let delay = second * Double(idx)
-//                anim.beginTime = CACurrentMediaTime() + delay
-//                
-//                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay, execute: {
-//                    view.layer.position = path.currentPoint
-//                    if view.layer.opacity < 0.1 {
-//                        view.layer.opacity = 1.0
-//                    }
-//                })
-//
-//                view.layer.add(anim, forKey: "circle")
-//            }
-//        }
-//        
-//        switch mode {
-//        case .sameTime:
-//            sameTime()
-//        case .inTurn:
-//            inTurn()
-//        case let .delay(second):
-//            delay(second)
-//        }
-        
     }
     
-    public func circleClose(arcCenter: CGPoint, radius: CGFloat, endAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
+    private func circleClose(arcCenter: CGPoint, radius: CGFloat, endAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, delay: TimeInterval, mode: CircleMode, completion: ((Int, UIView)->())?) {
         let anim = CAKeyframeAnimation()
         anim.keyPath = "position"
         anim.calculationMode = kCAAnimationCubicPaced
@@ -186,47 +110,39 @@ extension WJCGroupAnimation {
             switch mode {
             case .sameTime:
                 anim.duration = duration
-                view.layer.position = path.currentPoint
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + duration, execute: {
-                    view.layer.opacity = 0.0
-                })
             case .inTurn:
                 let maxMoveAngle = maxAngle - marginAngle
                 anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / maxMoveAngle) * duration
-                view.layer.position = path.currentPoint
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + duration, execute: {
-                    view.layer.opacity = 0.0
-                })
-            case let .delay(second):
-                let maxMoveAngle = maxAngle - marginAngle
-                anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / maxMoveAngle) * duration
-                
-                let delay = second * Double(idx)
-                anim.beginTime = CACurrentMediaTime() + delay
-                
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay, execute: {
-                    view.layer.position = path.currentPoint
-                    view.layer.opacity = 0.0
-                })
             }
             
+            anim.beginTime = CACurrentMediaTime() + delay * Double(idx)
             view.layer.add(anim, forKey: "circle")
+            
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay * Double(idx), execute: {
+                view.layer.position = path.currentPoint
+            })
+            
+            let time = delay * Double(idx) + duration
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + time, execute: {
+                view.layer.opacity = 0.0
+                completion?(idx, view)
+            })
         }
     }
     
     //MARK: ---------------------------
     
-    public func circleOpenEqually(arcCenter: CGPoint, radius: CGFloat, startAngle: CGFloat, maxDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
-        circleOpen(arcCenter: arcCenter, radius: radius, startAngle: startAngle, maxDegree: maxDegree, marginDegree: maxDegree / CGFloat(views.count + 1), clockwise: clockwise, duration: duration, mode: mode)
-    }
-    
-    public func circleCloseEqually(arcCenter: CGPoint, radius: CGFloat, endAngle: CGFloat, maxDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
-        circleClose(arcCenter: arcCenter, radius: radius, endAngle: endAngle, maxDegree: maxDegree, marginDegree: maxDegree / CGFloat(views.count + 1), clockwise: clockwise, duration: duration, mode: mode)
-    }
+//    public func circleOpenEqually(arcCenter: CGPoint, radius: CGFloat, startAngle: CGFloat, maxDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
+//        circleOpen(arcCenter: arcCenter, radius: radius, startAngle: startAngle, maxDegree: maxDegree, marginDegree: maxDegree / CGFloat(views.count + 1), clockwise: clockwise, duration: duration, mode: mode)
+//    }
+//    
+//    public func circleCloseEqually(arcCenter: CGPoint, radius: CGFloat, endAngle: CGFloat, maxDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
+//        circleClose(arcCenter: arcCenter, radius: radius, endAngle: endAngle, maxDegree: maxDegree, marginDegree: maxDegree / CGFloat(views.count + 1), clockwise: clockwise, duration: duration, mode: mode)
+//    }
     
     // MARK: ------------opacity------------
     
-    public func circleOpenOpacity(arcCenter: CGPoint, radius: CGFloat, startAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
+    private func circleOpenOpacity(arcCenter: CGPoint, radius: CGFloat, startAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, delay: TimeInterval, mode: CircleMode) {
         
         let showAnim = CABasicAnimation(keyPath: "opacity")
         showAnim.fromValue = 0.0
@@ -254,41 +170,26 @@ extension WJCGroupAnimation {
             groupAnim.animations?.append(anim)
             
             switch mode {
-            case .sameTime:
-                view.layer.position = path.currentPoint
-                if view.layer.opacity < 0.1 {
-                    view.layer.opacity = 1.0
-                }
+            case .sameTime: break
             case .inTurn:
                 
                 let totalMoveAngle = maxAngle - marginAngle
                 anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / totalMoveAngle) * duration
-                
+            }
+            
+            groupAnim.beginTime = CACurrentMediaTime() + delay * Double(idx)
+            view.layer.add(groupAnim, forKey: "group")
+            
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay * Double(idx), execute: {
                 view.layer.position = path.currentPoint
                 if view.layer.opacity < 0.1 {
                     view.layer.opacity = 1.0
                 }
-            case let .delay(second):
-                
-                let totalMoveAngle = maxAngle - marginAngle
-                anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / totalMoveAngle) * duration
-                
-                let delay = second * Double(idx)
-                groupAnim.beginTime = CACurrentMediaTime() + delay
-                
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay, execute: {
-                    view.layer.position = path.currentPoint
-                    if view.layer.opacity < 0.1 {
-                        view.layer.opacity = 1.0
-                    }
-                })
-            }
-            
-            view.layer.add(groupAnim, forKey: "group")
+            })
         }
     }
     
-    public func circleCloseOpacity(arcCenter: CGPoint, radius: CGFloat, endAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, mode: CircleMode) {
+    private func circleCloseOpacity(arcCenter: CGPoint, radius: CGFloat, endAngle: CGFloat, maxDegree: CGFloat, marginDegree: CGFloat, clockwise: Bool, duration: TimeInterval, delay: TimeInterval, mode: CircleMode, completion: ((Int, UIView)->())?) {
         
         let showAnim = CABasicAnimation(keyPath: "opacity")
         showAnim.fromValue = 1.0
@@ -315,52 +216,97 @@ extension WJCGroupAnimation {
             group.animations?.append(anim)
             
             switch mode {
-            case .sameTime:
-                view.layer.position = path.currentPoint
-                view.layer.opacity = 0.0
+            case .sameTime: break
             case .inTurn:
                 
                 let maxMoveAngle = maxAngle - marginAngle
                 anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / maxMoveAngle) * duration
-                view.layer.position = path.currentPoint
-                view.layer.opacity = 0.0
-            case let .delay(second):
-                
-                let maxMoveAngle = maxAngle - marginAngle
-                anim.duration = Double((marginAngle + eachAngle * CGFloat(idx)) / maxMoveAngle) * duration
-                
-                let delay = second * Double(idx)
-                group.beginTime = CACurrentMediaTime() + delay
-                
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay, execute: {
-                    view.layer.position = path.currentPoint
-                    view.layer.opacity = 0.0
-                })
             }
             
+            group.beginTime = CACurrentMediaTime() + delay * Double(idx)
             view.layer.add(group, forKey: "group")
+            
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay * Double(idx), execute: {
+                view.layer.position = path.currentPoint
+                view.layer.opacity = 0.0
+            })
+            
+            if completion != nil {
+                let time = delay * Double(idx) + duration
+                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + time, execute: { 
+                    completion?(idx, view)
+                })
+            }
         }
     }
     
     // MARK: ------------items------------
     
-    public func itemsShow(origin: CGPoint, tx: CGFloat, ty: CGFloat, space: CGFloat, duration: TimeInterval, delay: TimeInterval , mode: MoveMode) {
+    public enum ItemsMode {
+        case move(tx: CGFloat, ty: CGFloat)
+        case state(_: MoveState)
+        case opacity
+        case rotate
+    }
+    
+    public func items(duration: TimeInterval, delay: TimeInterval, mode: [ItemsMode], completion: ((Int, UIView)->())?) {
+        
+    }
+    
+    
+    
+    
+    public enum MoveState {
+        case show(origin: CGPoint, space: CGFloat)
+        case hide(completion: ((Int, UIView)->())?)
+    }
+    
+    public func itemsMove(tx: CGFloat, ty: CGFloat, duration: TimeInterval, delay: TimeInterval, state: MoveState) {
+        switch state {
+        case let .show(origin, space):
+            itemsMoveShow(origin: origin, tx: tx, ty: ty, space: space, duration: duration, delay: delay)
+        case let .hide(completion):
+            itemsMoveHide(tx: tx, ty: ty, duration: duration, delay: delay, completion: completion)
+        }
+    }
+    
+    private func itemsMoveShow(origin: CGPoint, tx: CGFloat, ty: CGFloat, space: CGFloat, duration: TimeInterval, delay: TimeInterval) {
         
         let showAnim = CABasicAnimation(keyPath: "opacity")
         showAnim.fromValue = 0.0
         showAnim.toValue = 1.0
         
+        
+        var transform = CATransform3DIdentity
+        transform.m34 = -2.0 / 500.0
+        transform = CATransform3DRotate(transform, CGFloat.pi, 0, 1, 0)
+        let rotateAnim = CABasicAnimation(keyPath: "transform")
+        rotateAnim.fromValue = NSValue(caTransform3D: CATransform3DIdentity)
+        rotateAnim.toValue = NSValue(caTransform3D: transform)
+        
+        
         let group = CAAnimationGroup()
         group.duration = duration
         
-        var totalHeight: CGFloat = 0.0
-        for (idx, view) in views.enumerated() {
+        var addHeight: CGFloat = 0.0
+        if ty > 0 {
+            views.forEach { (v) in
+                addHeight += v.frame.height
+            }
+        }
+        
+        for (idx, view) in ty > 0 ? views.reversed().enumerated() : views.enumerated() {
             
-            if idx == 0 {
+            let reversedIdx = ty > 0 ? views.count - 1 - idx : idx
+            if reversedIdx == 0 {
                 view.frame.origin = origin
             } else {
-                totalHeight += views[idx-1].frame.height
-                view.frame.origin = CGPoint(x: origin.x, y: origin.y + space * CGFloat(idx) + totalHeight)
+                if ty > 0 {
+                    addHeight -= view.frame.height
+                } else {
+                    addHeight += views[reversedIdx-1].frame.height
+                }
+                view.frame.origin = CGPoint(x: origin.x, y: origin.y + space * CGFloat(reversedIdx) + addHeight)
             }
             
             let moveAnim = CABasicAnimation(keyPath: "position")
@@ -368,7 +314,8 @@ extension WJCGroupAnimation {
             moveAnim.toValue = NSValue(cgPoint: CGPoint(x: view.layer.position.x + tx, y: view.layer.position.y + ty))
             moveAnim.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseIn)
             
-            group.animations = [showAnim, moveAnim]
+            
+            group.animations = [showAnim, moveAnim, rotateAnim]
             group.beginTime = CACurrentMediaTime() + delay * Double(idx)
             view.layer.add(group, forKey: nil)
             
@@ -379,9 +326,50 @@ extension WJCGroupAnimation {
         }
     }
     
-    public func itemsHide() {
+    private func itemsMoveHide(tx: CGFloat, ty: CGFloat, duration: TimeInterval, delay: TimeInterval, completion: ((Int, UIView)->())?) {
         
+        let showAnim = CABasicAnimation(keyPath: "opacity")
+        showAnim.fromValue = 1.0
+        showAnim.toValue = 0.0
+        
+        
+        var transform = CATransform3DIdentity
+        transform.m34 = -2.0 / 500.0
+        transform = CATransform3DRotate(transform, CGFloat.pi, 0, 1, 0)
+        let rotateAnim = CABasicAnimation(keyPath: "transform")
+        rotateAnim.fromValue = NSValue(caTransform3D: CATransform3DIdentity)
+        rotateAnim.toValue = NSValue(caTransform3D: transform)
+        
+        
+        let group = CAAnimationGroup()
+        group.duration = duration
+        
+        for (idx, view) in ty > 0 ? views.reversed().enumerated() : views.enumerated() {
+            let moveAnim = CABasicAnimation(keyPath: "position")
+            moveAnim.fromValue = NSValue(cgPoint: view.layer.position)
+            moveAnim.toValue = NSValue(cgPoint: CGPoint(x: view.layer.position.x + tx, y: view.layer.position.y + ty))
+            moveAnim.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseIn)
+            
+            
+            
+            group.animations = [showAnim, moveAnim, rotateAnim]
+            group.beginTime = CACurrentMediaTime() + delay * Double(idx)
+            view.layer.add(group, forKey: nil)
+            
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay * Double(idx), execute: {
+                view.layer.opacity = 0.0
+            })
+            
+            if completion != nil {
+                let time = delay * Double(idx) + duration
+                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + time, execute: {
+                    completion?(idx, view)
+                })
+            }
+        }
     }
+    
+    
     
     // MARK: private
     
